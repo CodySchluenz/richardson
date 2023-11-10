@@ -76,7 +76,7 @@ def parseExcelSheet():
                                 excelRowDict["(wissell1a)"] = splitPermit[0]
                         break
                     else:
-                        excelRowDict[key] = excelValue
+                        excelRowDict[key] = str(excelValue)
                         break
             
         if excelRowDict["(emailadd1)"] is not None:
