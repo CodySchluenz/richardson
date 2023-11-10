@@ -1,10 +1,14 @@
+from ast import Not
 import openpyxl
 import pdfrw
 
 
 excelFileName = "sellers.xlsx"
 excelFileWorksheetName = "Form Responses 1"
-# Create a dictionary to map the values to other values
+templatePDF = "template.pdf"
+completedPDF = "completed.pdf"
+counter = 1
+
 pdfValueMap = {
     "(wissell1)": "Wisconsin Seller Permit Number (15 digits starting with 456)",
     "(wissell1a)": "Wisconsin Seller Permit Number (15 digits starting with 456)",
@@ -18,12 +22,29 @@ pdfValueMap = {
     "(mailadd1)": "Mailing Address",
     "(emailadd1)": "Email Address",
     "(city1)": "City",
-    "(state1)": "new_state1_value",
-    "(zip1)": "State",
-    "(multi1)": "Zip"
+    "(state1)": "State",
+    "(zip1)": "Zip",
+    "(multi1)": "If a Multi-level Marketing company, please list the company name here (for number 2 responses)"
 }
 
 #----------------------------------------------------------------------------------
+# Function to increment the counter and update keys
+def increment_counter():
+    global counter
+    counter += 1
+    # Reset counter to 1 when it reaches 4
+    if counter > 4:
+        counter = 1
+
+#---------------------------------------------
+# Function to create a new dictionary with updated keys
+def incrementDict(excelRowDict):
+    updated_dict = {}
+    for key, value in excelRowDict.items():
+        updated_key = key.replace("1", str(counter))
+        updated_dict[updated_key] = value
+    return updated_dict
+#------------------
 
 def parseExcelSheet():
     # Open the Excel file and select worksheet
@@ -40,138 +61,65 @@ def parseExcelSheet():
     for row in worksheet.iter_rows(min_row=2, values_only=True):
         excelRowDict = {}
         for header, excelValue in zip(headers, row):
-            
             for key, value in pdfValueMap.items():
                 if value == header:
-                    excelRowDict[key] = excelValue
-                    break
+                    if value == "Wisconsin Seller Permit Number (15 digits starting with 456)":
+                        if excelValue is None:
+                            excelRowDict[key] = None
+                        else:  
+                            splitPermit = str(excelValue).split("-")
+                            if len(splitPermit) > 2:
+                                excelRowDict["(wissell1)"] = splitPermit[1]
+                                excelRowDict["(wissell1a)"] = splitPermit[2]
+                            else:
+                                excelRowDict["(wissell1)"] = splitPermit[0]
+                                excelRowDict["(wissell1a)"] = splitPermit[0]
+                        #makes wissel1 the first value
+                        # if len(splitPermit) > 0:
+                        #     excelRowDict[key] = splitPermit[0]
+                        # else:
+                        #     excelRowDict[key] = None
+                        break
+                    else:
+                        excelRowDict[key] = excelValue
+                        break
             
-            # if header in pdfValueMap.values():
-            #     pdfValueMap[]
-            #     print(pdfValueMap[str(header)])
-            #     excelRowDict[header] = value
         if excelRowDict["(emailadd1)"] is not None:
-            ExcelRowsMappedToPDF.append(excelRowDict)
+            incrementedDict = incrementDict(excelRowDict)
+            ExcelRowsMappedToPDF.append(incrementedDict)
+            increment_counter()
+            #ExcelRowsMappedToPDF.append(excelRowDict)
+            #replace num with counter
 
     # Close the Excel file when you're done
     workbook.close()
 
-    # Print the list of dictionaries
-    # for excelRow in ExcelRowsMappedToPDF:
-    #     print(excelRow)
+    return ExcelRowsMappedToPDF
 
 #------------------------------------------------------------------------
 
-column_dict = {
-    'Timestamp': None,
-    'Email Address': None,
-    'Legal Business Name (if not sole proprietor)': None,
-    'Last Name': None,
-    'First Name': None,
-    'Phone Number': None,
-    'Mailing Address': None,
-    'City': None,
-    'State': None,
-    'Zip': None,
-    'Wisconsin Seller Permit Number (15 digits starting with 456)': None,
-    'SSN (last 4 digits)': None,
-    'FEIN (last 4 digits)': None,
-    'Exemption code only if you are tax exempt': None,
-    # Add more keys as needed
-}
-
-# Create a dictionary to map the values to other values
-# value_mapping = {
-#     "(pg2a)": "new_pg2a_value",
-#     "(pg2b)": "new_pg2b_value",
-#     "(wissell1)": data_list["Wisconsin Seller Permit Number (15 digits starting with 456)"].split("-")[1:1],  #
-#     "(wissell1a)": data_list["Wisconsin Seller Permit Number (15 digits starting with 456)"].split("-")[2:],
-#     "(last4ssn1)": data_list["SSN (last 4 digits)"],
-#     "(last4fein1)": data_list["FEIN (last 4 digits)"],
-#     "(exempt1)": data_list["Exemption code only if you are tax exempt"],
-#     "(lglbusname1)": data_list["Legal Business Name (if not sole proprietor)"],
-#     "(dba1)": data_list["No Collected, leave blank"],
-#     "(vendcttnamlst1)": data_list["Last Name"],
-#     "(vendctnamfir1)": data_list["First Name"],
-#     "(vpn1)": data_list["Phone Number"],
-#     "(mailadd1)": data_list["Mailing Address"],
-#     "(emailadd1)": data_list["Email Address"],
-#     "(city1)": data_list["City"],
-#     "(state1)": data_list["State"],
-#     "(zip1)": data_list["Zip"],
-#     "(multi1)": data_list["If a Multi-level Marketing company, please list the company name here (for number 2 responses)"],
-
-#     "(wissell2)": "new_wissell2_value",
-#     "(wissell2a)": "new_wissell2a_value",
-#     "(last4ssn2)": "new_last4ssn2_value",
-#     "(last4fein2)": "new_last4fein2_value",
-#     "(exempt2)": "new_exempt2_value",
-#     "(lglbusname2)": "new_lglbusname2_value",
-#     "(dba2)": "new_dba2_value",
-#     "(vendcttnamlst2)": "new_vendcttnamlst2_value",
-#     "(vendctnamfir2)": "new_vendctnamfir2_value",
-#     "(vpn2)": "new_vpn2_value",
-#     "(mailadd2)": "new_mailadd2_value",
-#     "(emailadd2)": "new_emailadd2_value",
-#     "(city2)": "new_city2_value",
-#     "(state2)": "new_state2_value",
-#     "(zip2)": "new_zip2_value",
-#     "(multi2)": "new_multi2_value",
-#     "(wissell3)": "new_wissell3_value",
-#     "(wissell3a)": "new_wissell3a_value",
-#     "(last4ssn3)": "new_last4ssn3_value",
-#     "(last4fein3)": "new_last4fein3_value",
-#     "(exempt3)": "new_exempt3_value",
-#     "(lglbusname3)": "new_lglbusname3_value",
-#     "(dba3)": "new_dba3_value",
-#     "(vendcttnamlst3)": "new_vendcttnamlst3_value",
-#     "(vendctnamfir3)": "new_vendctnamfir3_value",
-#     "(vpn3)": "new_vpn3_value",
-#     "(mailadd3)": "new_mailadd3_value",
-#     "(emailadd3)": "new_emailadd3_value",
-#     "(city3)": "new_city3_value",
-#     "(state3)": "new_state3_value",
-#     "(zip3)": "new_zip3_value",
-#     "(multi3)": "new_multi3_value",
-#     "(wissell4)": "new_wissell4_value",
-#     "(wissell4a)": "new_wissell4a_value",
-#     "(last4ssn4)": "new_last4ssn4_value",
-#     "(last4fein4)": "new_last4fein4_value",
-#     "(exempt4)": "new_exempt4_value",
-#     "(lglbusname4)": "new_lglbusname4_value",
-#     "(dba4)": "new_dba4_value",
-#     "(vendcttnamlst4)": "new_vendcttnamlst4_value",
-#     "(vendctnamfir4)": "new_vendctnamfir4_value",
-#     "(vpn4)": "new_vpn4_value",
-#     "(mailadd4)": "new_mailadd4_value",
-#     "(emailadd4)": "new_emailadd4_value",
-#     "(city4)": "new_city4_value",
-#     "(state4)": "new_state4_value",
-#     "(zip4)": "new_zip4_value",
-#     "(multi4)": "new_multi4_value",
-# }
-
-
-
-
-
-
-
-
-def fillPDF(input_pdf_path, output_pdf_path, data_dict, start_page=2):
+def fillPDF(input_pdf_path, output_pdf_path, valueMapRows, start_page=2):
     template_pdf = pdfrw.PdfReader(input_pdf_path)
-
+    counter = 0
     for page_number, page in enumerate(template_pdf.pages, 1):
         if page_number >= start_page:
             if "/Annots" in page and page.Annots:
                 for annotation in page.Annots:
                     if annotation.get("/Subtype") == "/Widget" and annotation.get("/FT") == "/Tx":
-                        field_name = annotation.get("/T")
-                        print(field_name)
-                        annotation.update(pdfrw.PdfDict(V='{}'.format(field_name)))
-                        #if field_name in data_dict:
-                            #annotation.update(pdfrw.PdfDict(V='{}'.format(data_dict[field_name])))
+                        field_name = str(annotation.get("/T"))
+                        if not "pg" in field_name and not "dba" in field_name:
+                            for row in valueMapRows:
+                                if field_name in row:
+                                    valueToUpdate = str(row[field_name])
+                                    print(f"page number: {page_number} / annotation being updated: {field_name} with this value: {valueToUpdate} SUCCESS")
+                                    annotation.update(pdfrw.PdfDict(V='{}'.format(valueToUpdate)))
+                                    if "multi" in field_name:
+                                        valueMapRows.remove(row)
+                                    break
+                                else:
+                                    continue
 
+        print('end of page')
     pdfrw.PdfWriter().write(output_pdf_path, template_pdf)
 
 
@@ -194,17 +142,8 @@ def fill_pdf_formz(input_pdf_path, output_pdf_path, data_dict):
 
     pdfrw.PdfWriter().write(output_pdf_path, template_pdf)
 
-# Example usage
-
-# data_list = {
-#     '(Name)': 'cody',
-#     '(Address)': 'my address',
-#     '(Phone Number)': '123-456-6798',
-#     '(DOB)': '10/30/2023'
-# }
-
-parseExcelSheet()
+ExcelRowsMappedToPDF = parseExcelSheet()
 # Access a mapped value using the key
-mapped_value = pdfValueMap["(pg2a)"]
-print(mapped_value)  # This will print "new_pg2a_value"
-fillPDF('template.pdf', 'filled_output.pdf', data_list, start_page=2)
+# mapped_value = pdfValueMap["(pg2a)"]
+# print(mapped_value)  # This will print "new_pg2a_value"
+fillPDF(templatePDF, completedPDF, ExcelRowsMappedToPDF, start_page=2)
