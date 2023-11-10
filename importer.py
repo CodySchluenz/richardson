@@ -74,11 +74,6 @@ def parseExcelSheet():
                             else:
                                 excelRowDict["(wissell1)"] = splitPermit[0]
                                 excelRowDict["(wissell1a)"] = splitPermit[0]
-                        #makes wissel1 the first value
-                        # if len(splitPermit) > 0:
-                        #     excelRowDict[key] = splitPermit[0]
-                        # else:
-                        #     excelRowDict[key] = None
                         break
                     else:
                         excelRowDict[key] = excelValue
@@ -88,8 +83,6 @@ def parseExcelSheet():
             incrementedDict = incrementDict(excelRowDict)
             ExcelRowsMappedToPDF.append(incrementedDict)
             increment_counter()
-            #ExcelRowsMappedToPDF.append(excelRowDict)
-            #replace num with counter
 
     # Close the Excel file when you're done
     workbook.close()
@@ -100,7 +93,6 @@ def parseExcelSheet():
 
 def fillPDF(input_pdf_path, output_pdf_path, valueMapRows, start_page=2):
     template_pdf = pdfrw.PdfReader(input_pdf_path)
-    counter = 0
     for page_number, page in enumerate(template_pdf.pages, 1):
         if page_number >= start_page:
             if "/Annots" in page and page.Annots:
@@ -119,31 +111,8 @@ def fillPDF(input_pdf_path, output_pdf_path, valueMapRows, start_page=2):
                                 else:
                                     continue
 
-        print('end of page')
     pdfrw.PdfWriter().write(output_pdf_path, template_pdf)
 
-
-def fill_pdf_formz(input_pdf_path, output_pdf_path, data_dict):
-    template_pdf = pdfrw.PdfReader(input_pdf_path)
-    
-    for page in template_pdf.pages:
-        annotations = page.Annots
-        if annotations is not None:
-            for annotation in annotations:
-                if annotation.get('/FT') == '/Tx':
-                    field_name = annotation.get('/T')
-                    print(field_name)
-                    annotation.update(pdfrw.PdfDict(V='{}'.format(field_name)))
-                    for key in data_dict:
-                        if field_name in key:
-                            annotation.update(pdfrw.PdfDict(V='{}'.format(key[field_name])))
-                    if field_name in data_dict:
-                        annotation.update(pdfrw.PdfDict(V='{}'.format(data_dict[field_name])))
-
-    pdfrw.PdfWriter().write(output_pdf_path, template_pdf)
 
 ExcelRowsMappedToPDF = parseExcelSheet()
-# Access a mapped value using the key
-# mapped_value = pdfValueMap["(pg2a)"]
-# print(mapped_value)  # This will print "new_pg2a_value"
 fillPDF(templatePDF, completedPDF, ExcelRowsMappedToPDF, start_page=2)
